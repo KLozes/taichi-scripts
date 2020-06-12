@@ -5,18 +5,14 @@ import matplotlib.cm as cm
 real = ti.f32
 ti.init(arch=ti.x64, default_fp=real, enable_profiler=True, debug= True)
 
-N = 512 # grid resolution
+N = 1024 # grid resolution
 CFL = .8
 IC_type = 0  # 0:sod
 BC_type = 0 # 0:walls
 img_field = 0 # 0:density, 1: schlieren, 2:vorticity, 3: velocity mag, 4: temperature
-res = 512  # gui resolution
+res = 1024  # gui resolution
 cmap_name = 'magma_r' # python colormap name
 
-
-gamma = 1.4 # ratio of specific heats
-h = 1.0/(N-2) # cell size
-vol = h*h  # cell volume
 
 Q = ti.Vector(4, dt=real, shape=(N,N)) # cell average conserved variables vector [rho, rho*u, rho*v, rho*e]
 Q_old = ti.Vector(4, dt=real, shape=(N,N))
@@ -26,6 +22,9 @@ F_y = ti.Vector(4, dt=real, shape=(N,N)) # y-face flux vector
 dt = ti.var(dt=real, shape=())
 img = ti.var(dt=ti.f32, shape=(res,res))
 
+gamma = 1.4 # ratio of specific heats
+h = 1.0/(N-2) # cell size
+vol = h*h  # cell volume
 
 @ti.func
 def is_interior_cell(i,j):
@@ -170,16 +169,7 @@ def HLLC_flux(qL, qR, n):
     a = ti.sqrt( (gamma-1.0)*(H-(u**2+v**2)/2.0))
     vn = u*nx+v*ny
 
-
-    # Wave speed estimates
-    #sL = min(min(vnL-aL, vn-a), 0.0)
-    #sR = max(max(vnR+aR, vn+a), 0.0)
-
-    # Compute the HLL flux.
-    #HLLC = (sR*fL - sL*fR + sL*sR*(qR-qL))/(sR-sL)
-
     # wavespeeds
-
     sL = min(vnL - aL, vn - a)
     sR = max(vnR + aR, vn + a)
     sM = (pL-pR + rR*vnR*(sR-vnR) - rL*vnL*(sL-vnL))/(rR*(sR-vnR) - rL*(sL-vnL))
